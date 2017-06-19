@@ -1,24 +1,24 @@
 /*
-Copyright 2016 Capital One Services, LLC
+ Copyright 2016 Capital One Services, LLC
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+ http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and limitations under the License.
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and limitations under the License.
 
-SPDX-Copyright: Copyright (c) Capital One Services, LLC
-SPDX-License-Identifier: Apache-2.0
-*/
+ SPDX-Copyright: Copyright (c) Capital One Services, LLC
+ SPDX-License-Identifier: Apache-2.0
+ */
 
 import React,{Component} from 'react'
 import {Text as ReactText}  from 'react-native'
-import Svg,{ G, Path, Rect, Text } from 'react-native-svg'
+import Svg,{ G, Path, Rect, Text, Circle, TSpan} from 'react-native-svg'
 import { Colors, Options, cyclic, fontAdapt } from './util'
 import Axis from './Axis'
 import _ from 'lodash'
@@ -62,6 +62,10 @@ export default class LineChart extends Component {
     return Colors.string(cyclic(pallete, i))
   }
 
+  directColor(i) {
+    return cyclic(this.props.options.colors || this.props.options.color, i)
+  }
+
   render() {
     const noDataMsg = this.props.noDataMessage || 'No data available'
     if (this.props.data === undefined) return (<ReactText>{noDataMsg}</ReactText>)
@@ -86,27 +90,80 @@ export default class LineChart extends Component {
     })
 
     let chartArea = {
-      x:this.getMaxAndMin(chart,this.props.xKey,chart.xscale),
-      y:this.getMaxAndMin(chart,this.props.yKey,chart.yscale,options.min,options.max),
-      margin:options.margin
+      x: this.getMaxAndMin(chart, this.props.xKey, chart.xscale),
+      y: this.getMaxAndMin(chart, this.props.yKey, chart.yscale, options.min, options.max),
+      margin: options.margin
     }
 
     let showAreas = typeof(this.props.options.showAreas) !== 'undefined' ? this.props.options.showAreas : true;
     let strokeWidth = typeof(this.props.options.strokeWidth) !== 'undefined' ? this.props.options.strokeWidth : '1';
     let lines = _.map(chart.curves, function (c, i) {
-      return <Path key={'lines' + i} d={ c.line.path.print() } stroke={ this.color(i) } strokeWidth={strokeWidth} fill="none"/>
+      return <Path key={'lines' + i} d={ c.line.path.print() } stroke={ this.directColor(i) } strokeWidth={strokeWidth}
+                   strokeLinecap="round" fill="none"/>
     }.bind(this))
     let areas = null
 
-    if(showAreas){
+    if (showAreas) {
       areas = _.map(chart.curves, function (c, i) {
-        return <Path key={'areas' + i} d={ c.area.path.print() } fillOpacity={0.5} stroke="none" fill={ this.color(i) }/>
+        return <Path key={'areas' + i} d={ c.area.path.print() } fillOpacity={0.5} stroke="none"
+                     fill={ this.directColor(i) }/>
       }.bind(this))
+    }
+
+    /**
+     * 渲染线上的点
+     * */
+    let points = [];
+    let showPoints = this.props.options.showPoints
+    if (showPoints) {
+      let pointStyles = this.props.options.pointStyles
+      for (let curve of chart.curves) {
+        let index = chart.curves.indexOf(curve);
+        console.log(this.color(index))
+        let pointStyle = pointStyles[index] || pointStyles[0];
+        let tempPoints = _.map(curve.line.path.points(), function (c, i) {
+          let textY = c[1]
+          let textX = c[0]
+          let textAnchor = "middle"
+          switch (pointStyle.textPosition) {
+            case "top":
+              textY = textY - pointStyle.fontSize / 2 - pointStyle.textAlign
+              break;
+            case "right":
+              textX = textX + pointStyle.textAlign
+              textAnchor = "start"
+              break;
+            case "bottom":
+              textY = textY - pointStyle.fontSize + pointStyle.textAlign
+              break;
+            case "left":
+              textX = textX - pointStyle.textAlign
+              textAnchor = "end"
+              break;
+          }
+          return <G key={"g" + i}>
+            <Text x={textX} y={textY} textAnchor={textAnchor}
+                  fill={pointStyle.fontColor}
+                  fontWeight={pointStyle.fontWeight}
+                  fontFamily={pointStyle.fontFamily}
+                  fontSize={pointStyle.fontSize}>
+              320
+            </Text>
+            <Circle cx={c[0]} cy={c[1]} r={pointStyle.r} fill="none" stroke={this.directColor(index)}
+                    strokeWidth={pointStyle.strokeWidth}
+                    fill={pointStyle.fill}/>
+          </G>
+        }.bind(this))
+
+        if (tempPoints && tempPoints.length > 0) {
+          points.splice(points.length, 0, tempPoints)
+        }
+      }
     }
 
     let textStyle = fontAdapt(options.label)
     let regions
-    if(this.props.regions != 'undefined') {
+    if (this.props.regions != 'undefined') {
       let styling = typeof(this.props.regionStyling) != 'undefined' ?
         this.props.regionStyling : {}
       let labelOffsetAllRegions = typeof(styling.labelOffset) != 'undefined' ?
@@ -119,13 +176,13 @@ export default class LineChart extends Component {
           c.labelOffset : {}
         let labelOffsetLeft = typeof(labelOffsetAllRegions.left) != 'undefined'
           ? (typeof(labelOffset.left) != 'undefined'
-              ?  labelOffset.left : labelOffsetAllRegions.left) : 20
+          ? labelOffset.left : labelOffsetAllRegions.left) : 20
         let labelOffsetTop = typeof(labelOffsetAllRegions.top) != 'undefined'
           ? (typeof(labelOffset.top) != 'undefined'
-              ?  labelOffset.top : labelOffsetAllRegions.top) : 0
+          ? labelOffset.top : labelOffsetAllRegions.top) : 0
         let fillOpacity = typeof(styling.fillOpacity) != 'undefined'
           ? (typeof(c.fillOpacity) != 'undefined'
-              ?  c.fillOpacity : styling.fillOpacity) : 0.5
+          ? c.fillOpacity : styling.fillOpacity) : 0.5
 
         y1 = chart.yscale(c.from)
         y2 = chart.yscale(c.to)
@@ -152,7 +209,7 @@ export default class LineChart extends Component {
         return (
           <G key={'region' + i}>
             <Rect key={'region' + i} x={x} y={y} width={width} height={height}
-              fill={c.fill} fillOpacity={fillOpacity}/>
+                  fill={c.fill} fillOpacity={fillOpacity}/>
             {regionLabel}
           </G>
         )
@@ -160,14 +217,15 @@ export default class LineChart extends Component {
     }
 
     let returnValue = <Svg width={options.width} height={options.height}>
-                  <G x={options.margin.left} y={options.margin.top}>
-                        { regions }
-                        { areas }
-                        { lines }
-                      <Axis key="x" scale={chart.xscale} options={options.axisX} chartArea={chartArea} />
-                      <Axis key="y" scale={chart.yscale} options={options.axisY} chartArea={chartArea} />
-                  </G>
-              </Svg>
+      <G x={options.margin.left} y={options.margin.top}>
+        { regions }
+        { areas }
+        { lines }
+        { points }
+        <Axis key="x" scale={chart.xscale} options={options.axisX} chartArea={chartArea}/>
+        <Axis key="y" scale={chart.yscale} options={options.axisY} chartArea={chartArea}/>
+      </G>
+    </Svg>
 
     return returnValue
   }
