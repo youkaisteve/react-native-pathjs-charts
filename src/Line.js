@@ -63,7 +63,7 @@ export default class LineChart extends Component {
   }
 
   directColor(i) {
-    return cyclic(this.props.options.colors || this.props.options.color, i)
+    return cyclic(this.props.options.colors || [this.props.options.color], i)
   }
 
   render() {
