@@ -215,17 +215,18 @@ export default class LineChart extends Component {
       }.bind(this))
     }
 
+    let maxFontSize = 0;
     //计算x轴的高度,避免X轴显示在top时overflow
     if(options.options.pointStyles && options.axisX.position == "top") {
-      let maxFontSize = _.max(options.options.pointStyles.map((p, i)=> {
+      maxFontSize = _.max(options.options.pointStyles.map((p, i)=> {
         return p.fontSize || 0
       }));
 
-      options.options.axisX.height = options.options.height + options.options.margin.top + maxFontSize || 0
+      options.options.axisX.height = options.options.height + options.options.margin.top + maxFontSize
     }
 
-    let returnValue = <Svg width={options.width} height={options.height}>
-      <G x={options.margin.left} y={options.margin.top}>
+    let returnValue = <Svg width={options.width} height={options.height + maxFontSize}>
+      <G x={options.margin.left} y={options.margin.top + maxFontSize}>
         { regions }
         { areas }
         { lines }
