@@ -41,7 +41,6 @@ export default class StockLineChart extends LineChart {
         fill: '#FFFFFF',
         textPosition: "top",//top,bottom,left,right
         textAlign: 10,
-        color: "purple",
         strokeWidth: 1,
         r: 2
       }],
