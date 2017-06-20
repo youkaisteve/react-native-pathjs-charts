@@ -1,20 +1,20 @@
 /*
-Copyright 2016 Capital One Services, LLC
+ Copyright 2016 Capital One Services, LLC
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+ http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and limitations under the License.
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and limitations under the License.
 
-SPDX-Copyright: Copyright (c) Capital One Services, LLC
-SPDX-License-Identifier: Apache-2.0
-*/
+ SPDX-Copyright: Copyright (c) Capital One Services, LLC
+ SPDX-License-Identifier: Apache-2.0
+ */
 
 import React, {Component} from 'react'
 import { Circle, G, Path, Text } from 'react-native-svg'
@@ -24,12 +24,13 @@ const Pathjs = require('paths-js/path')
 
 class AxisStruct {
 
-  constructor(scale, options, chartArea, horizontal) {
+  constructor(scale, options, chartArea, horizontal,position) {
     this.scale = scale
     this.options = options
     this.chartArea = chartArea
     this.margin = chartArea.margin
     this.horizontal = horizontal
+    this.position = position
   }
 
   static calcStepSize(range, targetSteps)
@@ -110,6 +111,8 @@ export default class Axis extends Component {
 
   render() {
     const { chartArea, options, scale } = this.props
+    const xPosition = options.position || "bottom"
+    const yPosition = options.position || "left"
     const horizontal = options.orient ==='top' || options.orient ==='bottom'
 
     const axis = new AxisStruct(scale,options,chartArea,horizontal).axis()
@@ -120,10 +123,12 @@ export default class Axis extends Component {
     if (options.orient === 'right') textAnchor = 'start'
 
     let xy = [0,0]
-    if (options.orient === 'top')  xy = [0,-5]
-    if (options.orient === 'bottom') xy = [0,5]
-    if (options.orient === 'left')  xy = [-5,-10]
-    if (options.orient === 'right')  xy = [5,5]
+    if(xPosition === 'top') xy=[xy[0],xy[1] - options.height]
+    if(yPosition === "right") xy=[xy[0] - options.width,xy[1]]
+    if (options.orient === 'top')  xy = [xy[0],xy[1]-5]
+    if (options.orient === 'bottom') xy = [xy[0],xy[1]+5]
+    if (options.orient === 'left')  xy = [xy[0]-5,xy[1]-10]
+    if (options.orient === 'right')  xy = [xy[0]+5,xy[1]+5]
 
     if (typeof options.color !== 'string') {
       options.color = '#3E90F0'
@@ -160,19 +165,19 @@ export default class Axis extends Component {
       if (label !== undefined && label !== null) {
         returnValue =
           <G key={i} x={gxy[0]} y={gxy[1]}>
-              {options.showTicks &&
-                <Circle r={options.tickSize} cx="0" cy="0" stroke={options.tickColor} fill={options.tickColor} />
-              }
-              {options.showLabels &&
-                <Text x={xy[0]} y={xy[1]}
-                      fontFamily={textStyle.fontFamily}
-                      fontSize={textStyle.fontSize}
-                      fontWeight={textStyle.fontWeight}
-                      fontStyle={textStyle.fontStyle}
-                      fill={textStyle.fill}
-                      textAnchor={textAnchor}>
-                      {label}
-                </Text>}
+            {options.showTicks &&
+            <Circle r={options.tickSize} cx="0" cy="0" stroke={options.tickColor} fill={options.tickColor} />
+            }
+            {options.showLabels &&
+            <Text x={xy[0]} y={xy[1]}
+                  fontFamily={textStyle.fontFamily}
+                  fontSize={textStyle.fontSize}
+                  fontWeight={textStyle.fontWeight}
+                  fontStyle={textStyle.fontStyle}
+                  fill={textStyle.fill}
+                  textAnchor={textAnchor}>
+              {label}
+            </Text>}
           </G>
       }
 
@@ -182,8 +187,8 @@ export default class Axis extends Component {
 
     const gridLines = options.showLines ? _.map(axis.lines, function (c, i) {
       return (
-               <Path key={'gridLines' + i} d={c.print()} strokeOpacity={options.opacity} stroke={options.gridColor} fill="none"/>
-            )
+        <Path key={'gridLines' + i} d={c.print()} strokeOpacity={options.opacity} stroke={options.gridColor} fill="none"/>
+      )
     }) : []
 
     let offset = {
@@ -194,14 +199,14 @@ export default class Axis extends Component {
     }
 
     let returnV = <G>
-              <G x={offset.x} y={offset.y}>
-                {options.showAxis ? <Path d={axis.path.print()} strokeOpacity={options.opacity} stroke={options.color} strokeWidth={options.strokeWidth} fill="none"/> : null}
-              </G>
-              {ticks}
-              <G x={offset.x} y={offset.y}>
-                {gridLines}
-              </G>
-            </G>
+      <G x={offset.x} y={offset.y}>
+        {options.showAxis ? <Path d={axis.path.print()} strokeOpacity={options.opacity} stroke={options.color} strokeWidth={options.strokeWidth} fill="none"/> : null}
+      </G>
+      {ticks}
+      <G x={offset.x} y={offset.y}>
+        {gridLines}
+      </G>
+    </G>
 
     return returnV
 

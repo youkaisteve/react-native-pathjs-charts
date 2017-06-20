@@ -119,7 +119,6 @@ export default class LineChart extends Component {
       let pointStyles = this.props.options.pointStyles
       for (let curve of chart.curves) {
         let index = chart.curves.indexOf(curve);
-        console.log(this.color(index))
         let pointStyle = pointStyles[index] || pointStyles[0];
         let tempPoints = _.map(curve.line.path.points(), function (c, i) {
           let textY = c[1]
@@ -147,7 +146,7 @@ export default class LineChart extends Component {
                   fontWeight={pointStyle.fontWeight}
                   fontFamily={pointStyle.fontFamily}
                   fontSize={pointStyle.fontSize}>
-              320
+              {accessor(this.props.xKey)(this.props.data[index][i])}
             </Text>
             <Circle cx={c[0]} cy={c[1]} r={pointStyle.r} fill="none" stroke={this.directColor(index)}
                     strokeWidth={pointStyle.strokeWidth}
@@ -214,6 +213,15 @@ export default class LineChart extends Component {
           </G>
         )
       }.bind(this))
+    }
+
+    //计算x轴的高度,避免X轴显示在top时overflow
+    if(options.options.pointStyles && options.axisX.position == "top") {
+      let maxFontSize = _.max(options.options.pointStyles.map((p, i)=> {
+        return p.fontSize || 0
+      }));
+
+      options.options.axisX.height = options.options.height + options.options.margin.top + maxFontSize || 0
     }
 
     let returnValue = <Svg width={options.width} height={options.height}>
