@@ -146,7 +146,7 @@ export default class LineChart extends Component {
                   fontWeight={pointStyle.fontWeight}
                   fontFamily={pointStyle.fontFamily}
                   fontSize={pointStyle.fontSize}>
-              {accessor(this.props.xKey)(this.props.data[index][i])}
+              {accessor(this.props.yKey)(this.props.data[index][i])}
             </Text>
             <Circle cx={c[0]} cy={c[1]} r={pointStyle.r} fill="none" stroke={this.directColor(index)}
                     strokeWidth={pointStyle.strokeWidth}
